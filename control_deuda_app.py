@@ -2,11 +2,18 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import csv
 
 # Inicializar sesión
 if 'deuda_inicial' not in st.session_state:
     st.session_state.deuda_inicial = 0.0
     st.session_state.pagos = []
+
+# Función para guardar pagos en CSV
+def guardar_pago_csv(fecha, monto):
+    with open("pagos.csv", mode="a", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow([fecha, monto])
 
 st.title("📊 Control de Deuda Personal")
 
@@ -25,6 +32,7 @@ fecha_pago = st.date_input("Fecha del pago:", value=datetime.today())
 if st.button("Registrar pago"):
     if pago_input > 0:
         st.session_state.pagos.append({"Fecha": fecha_pago, "Monto": pago_input})
+        guardar_pago_csv(fecha_pago, pago_input)
         st.success(f"Pago de S/ {pago_input:.2f} registrado el {fecha_pago}")
     else:
         st.error("Ingrese un monto válido para el pago.")
@@ -52,3 +60,4 @@ if st.session_state.pagos:
     st.bar_chart(reporte_mensual.set_index('Mes'))
 else:
     st.info("No hay datos suficientes para generar el reporte mensual.")
+
