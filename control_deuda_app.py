@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -6,7 +5,6 @@ import csv
 import os
 
 # Función para cargar deuda desde CSV
-
 def cargar_deuda_csv():
     if os.path.exists("deuda.csv"):
         with open("deuda.csv", mode="r", encoding="utf-8") as file:
@@ -20,7 +18,6 @@ def cargar_deuda_csv():
     return 0.0
 
 # Función para cargar pagos desde CSV
-
 def cargar_pagos_csv():
     pagos = []
     if os.path.exists("pagos.csv"):
@@ -44,7 +41,6 @@ if 'pagos' not in st.session_state:
     st.session_state.pagos = cargar_pagos_csv()
 
 # Función para guardar pagos en CSV
-
 def guardar_pago_csv(fecha, monto):
     pagos_existentes = cargar_pagos_csv()
     pagos_existentes.append({"Fecha": fecha, "Monto": monto})
@@ -55,7 +51,6 @@ def guardar_pago_csv(fecha, monto):
             writer.writerow([pago["Fecha"], pago["Monto"]])
 
 # Función para guardar deuda en CSV
-
 def guardar_deuda_csv(monto):
     with open("deuda.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
@@ -64,17 +59,13 @@ def guardar_deuda_csv(monto):
 
 st.title("📊 Control de Deuda Personal")
 
-# 1️⃣ Establecer deuda inicial
-st.subheader("1️⃣ Establecer deuda inicial")
-deuda_input = st.number_input("Ingrese el monto de la deuda inicial (S/):", min_value=0.0, step=0.01)
-if st.button("Establecer deuda"):
-    st.session_state.deuda_inicial = deuda_input
-    st.session_state.pagos = []
-    guardar_deuda_csv(deuda_input)
-    with open("pagos.csv", mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Fecha", "Monto"])  # Reiniciar historial de pagos
-    st.success(f"Deuda inicial establecida en S/ {deuda_input:.2f}")
+# 1️⃣ Añadir nueva deuda
+st.subheader("1️⃣ Añadir nueva deuda")
+deuda_input = st.number_input("Ingrese el monto de la nueva deuda (S/):", min_value=0.0, step=0.01)
+if st.button("Añadir deuda"):
+    st.session_state.deuda_inicial += deuda_input
+    guardar_deuda_csv(st.session_state.deuda_inicial)
+    st.success(f"Se ha añadido S/ {deuda_input:.2f} a la deuda. Total actual: S/ {st.session_state.deuda_inicial:.2f}")
 
 # 2️⃣ Registrar pagos
 st.subheader("2️⃣ Registrar un pago")
@@ -93,11 +84,14 @@ st.subheader("3️⃣ Saldo restante")
 total_pagado = sum(p['Monto'] for p in st.session_state.pagos)
 saldo_restante = st.session_state.deuda_inicial - total_pagado
 st.metric(label="Saldo pendiente", value=f"S/ {saldo_restante:.2f}")
+st.metric(label="Total pagado", value=f"S/ {total_pagado:.2f}")
 
 # 4️⃣ Historial de pagos
 st.subheader("4️⃣ Historial de pagos")
 if st.session_state.pagos:
     df_pagos = pd.DataFrame(st.session_state.pagos)
+    df_pagos = df_pagos.sort_values(by="Fecha")
+    df_pagos["Fecha"] = df_pagos["Fecha"].astype(str)
     st.dataframe(df_pagos)
     csv = df_pagos.to_csv(index=False).encode('utf-8')
     st.download_button(
@@ -118,3 +112,4 @@ if st.session_state.pagos:
     st.bar_chart(reporte_mensual.set_index('Mes'))
 else:
     st.info("No hay datos suficientes para generar el reporte mensual.")
+``
