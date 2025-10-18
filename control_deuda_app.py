@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -59,6 +60,17 @@ def guardar_deuda_csv(monto):
 
 st.title("📊 Control de Deuda Personal")
 
+# 🔄 Resetear deuda y pagos
+st.subheader("🔄 Resetear deuda y pagos")
+if st.button("Resetear todo"):
+    st.session_state.deuda_inicial = 0.0
+    st.session_state.pagos = []
+    guardar_deuda_csv(0.0)
+    with open("pagos.csv", mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Fecha", "Monto"])
+    st.success("La deuda y el historial de pagos han sido reiniciados.")
+
 # 1️⃣ Añadir nueva deuda
 st.subheader("1️⃣ Añadir nueva deuda")
 deuda_input = st.number_input("Ingrese el monto de la nueva deuda (S/):", min_value=0.0, step=0.01)
@@ -112,4 +124,3 @@ if st.session_state.pagos:
     st.bar_chart(reporte_mensual.set_index('Mes'))
 else:
     st.info("No hay datos suficientes para generar el reporte mensual.")
-
