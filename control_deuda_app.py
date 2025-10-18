@@ -5,36 +5,42 @@ from datetime import datetime
 import csv
 import os
 
+# Función para cargar deuda desde CSV
+
+def cargar_deuda_csv():
+    if os.path.exists("deuda.csv"):
+        with open("deuda.csv", mode="r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)  # Saltar encabezado
+            try:
+                monto = next(reader)[0]
+                return float(monto)
+            except:
+                return 0.0
+    return 0.0
+
+# Función para cargar pagos desde CSV
+
+def cargar_pagos_csv():
+    pagos = []
+    if os.path.exists("pagos.csv"):
+        with open("pagos.csv", mode="r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)  # Saltar encabezado
+            for row in reader:
+                try:
+                    fecha = datetime.strptime(row[0], "%Y-%m-%d").date()
+                    monto = float(row[1])
+                    pagos.append({"Fecha": fecha, "Monto": monto})
+                except:
+                    continue
+    return pagos
+
 # Inicializar sesión
 if 'deuda_inicial' not in st.session_state:
-    def cargar_deuda_csv():
-        if os.path.exists("deuda.csv"):
-            with open("deuda.csv", mode="r", encoding="utf-8") as file:
-                reader = csv.reader(file)
-                next(reader)  # Saltar encabezado
-                try:
-                    monto = next(reader)[0]
-                    return float(monto)
-                except:
-                    return 0.0
-        return 0.0
     st.session_state.deuda_inicial = cargar_deuda_csv()
 
 if 'pagos' not in st.session_state:
-    def cargar_pagos_csv():
-        pagos = []
-        if os.path.exists("pagos.csv"):
-            with open("pagos.csv", mode="r", encoding="utf-8") as file:
-                reader = csv.reader(file)
-                next(reader)  # Saltar encabezado
-                for row in reader:
-                    try:
-                        fecha = datetime.strptime(row[0], "%Y-%m-%d").date()
-                        monto = float(row[1])
-                        pagos.append({"Fecha": fecha, "Monto": monto})
-                    except:
-                        continue
-        return pagos
     st.session_state.pagos = cargar_pagos_csv()
 
 # Función para guardar pagos en CSV
@@ -49,6 +55,7 @@ def guardar_pago_csv(fecha, monto):
             writer.writerow([pago["Fecha"], pago["Monto"]])
 
 # Función para guardar deuda en CSV
+
 def guardar_deuda_csv(monto):
     with open("deuda.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
