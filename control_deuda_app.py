@@ -3,17 +3,57 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import csv
+import os
 
 # Inicializar sesión
 if 'deuda_inicial' not in st.session_state:
-    st.session_state.deuda_inicial = 0.0
-    st.session_state.pagos = []
+    def cargar_deuda_csv():
+        if os.path.exists("deuda.csv"):
+            with open("deuda.csv", mode="r", encoding="utf-8") as file:
+                reader = csv.reader(file)
+                next(reader)  # Saltar encabezado
+                try:
+                    monto = next(reader)[0]
+                    return float(monto)
+                except:
+                    return 0.0
+        return 0.0
+    st.session_state.deuda_inicial = cargar_deuda_csv()
+
+if 'pagos' not in st.session_state:
+    def cargar_pagos_csv():
+        pagos = []
+        if os.path.exists("pagos.csv"):
+            with open("pagos.csv", mode="r", encoding="utf-8") as file:
+                reader = csv.reader(file)
+                next(reader)  # Saltar encabezado
+                for row in reader:
+                    try:
+                        fecha = datetime.strptime(row[0], "%Y-%m-%d").date()
+                        monto = float(row[1])
+                        pagos.append({"Fecha": fecha, "Monto": monto})
+                    except:
+                        continue
+        return pagos
+    st.session_state.pagos = cargar_pagos_csv()
 
 # Función para guardar pagos en CSV
+
 def guardar_pago_csv(fecha, monto):
-    with open("pagos.csv", mode="a", newline="", encoding="utf-8") as file:
+    pagos_existentes = cargar_pagos_csv()
+    pagos_existentes.append({"Fecha": fecha, "Monto": monto})
+    with open("pagos.csv", mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow([fecha, monto])
+        writer.writerow(["Fecha", "Monto"])
+        for pago in pagos_existentes:
+            writer.writerow([pago["Fecha"], pago["Monto"]])
+
+# Función para guardar deuda en CSV
+def guardar_deuda_csv(monto):
+    with open("deuda.csv", mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Deuda"])
+        writer.writerow([monto])
 
 st.title("📊 Control de Deuda Personal")
 
@@ -23,6 +63,10 @@ deuda_input = st.number_input("Ingrese el monto de la deuda inicial (S/):", min_
 if st.button("Establecer deuda"):
     st.session_state.deuda_inicial = deuda_input
     st.session_state.pagos = []
+    guardar_deuda_csv(deuda_input)
+    with open("pagos.csv", mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Fecha", "Monto"])  # Reiniciar historial de pagos
     st.success(f"Deuda inicial establecida en S/ {deuda_input:.2f}")
 
 # 2️⃣ Registrar pagos
@@ -48,6 +92,13 @@ st.subheader("4️⃣ Historial de pagos")
 if st.session_state.pagos:
     df_pagos = pd.DataFrame(st.session_state.pagos)
     st.dataframe(df_pagos)
+    csv = df_pagos.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Descargar historial de pagos (CSV)",
+        data=csv,
+        file_name='historial_pagos.csv',
+        mime='text/csv'
+    )
 else:
     st.info("No hay pagos registrados aún.")
 
@@ -60,5 +111,3 @@ if st.session_state.pagos:
     st.bar_chart(reporte_mensual.set_index('Mes'))
 else:
     st.info("No hay datos suficientes para generar el reporte mensual.")
-
-
