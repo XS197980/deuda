@@ -112,4 +112,4 @@ if st.session_state.pagos:
     st.bar_chart(reporte_mensual.set_index('Mes'))
 else:
     st.info("No hay datos suficientes para generar el reporte mensual.")
-``
+
